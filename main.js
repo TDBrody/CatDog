@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app-check.js";
 
 // Firebase config
 const firebaseConfig = {
@@ -13,25 +14,15 @@ const firebaseConfig = {
   appId: "1:559934644373:web:655dc88061e2a4b87d7b9c"
 };
 
-// Init
+// Init Firebase app
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth();
 
-let userId = null;
-
-// Wait for anonymous auth
-signInAnonymously(auth)
-  .then(() => console.log('[Auth] Signed in anonymously'))
-  .catch(err => console.error('[Auth] Sign-in failed:', err.message));
-
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    userId = user.uid;
-    enableVoting(); // Begin logic after auth is ready
-  } else {
-    console.warn('[Auth] User signed out');
-  }
+// Enable Firebase App Check with reCAPTCHA v3
+const appCheck = initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider('YOUR_RECAPTCHA_SITE_KEY'),
+  isTokenAutoRefreshEnabled: true
 });
 
 // DOM Elements
@@ -41,6 +32,7 @@ const dogText = document.getElementById('dog-text');
 const catText = document.getElementById('cat-text');
 const dogVotes = document.getElementById('dog-votes');
 const catVotes = document.getElementById('cat-votes');
+const supportBtn = document.getElementById('support-btn');
 
 // Live vote sync
 onValue(ref(db, 'votes'), (snapshot) => {
@@ -49,12 +41,17 @@ onValue(ref(db, 'votes'), (snapshot) => {
   catVotes.textContent = `Cat Votes: ${data.cat || 0}`;
 });
 
-// --- Anti-Cheat Variables ---
-let lastClick = 0;
-let clickHistory = [];
-let lastMouseMove = Date.now();
+// Sign in anonymously (for security)
+signInAnonymously(auth)
+  .then(() => {
+    console.log("User signed in anonymously.");
+  })
+  .catch((error) => {
+    console.error("Error signing in:", error);
+  });
 
-// Utility
+// Click Limiter: Prevent auto-clickers
+let lastClick = 0;
 function canClick() {
   const now = Date.now();
   if (now - lastClick >= 100) {
@@ -64,6 +61,32 @@ function canClick() {
   return false;
 }
 
+// Anti-Cheat: Prevent voting too frequently from the same place or on the same interval
+let lastVoteTime = 0;
+let lastClickPosition = null;
+let voteStreakTime = 0;  // Track how long someone clicks on the same spot
+
+function isSuspiciousClick(event) {
+  const now = Date.now();
+  const timeDifference = now - lastVoteTime;
+  const clickPosition = { x: event.clientX, y: event.clientY };
+  const distance = lastClickPosition ? Math.sqrt(Math.pow(clickPosition.x - lastClickPosition.x, 2) + Math.pow(clickPosition.y - lastClickPosition.y, 2)) : 0;
+
+  // If clicked in the same spot for over 20 minutes or with the same interval (100ms) for too long
+  if (timeDifference <= 100 && distance < 10) {
+    voteStreakTime += 100;
+    if (voteStreakTime >= 1200000) { // 20 minutes
+      window.location.href = 'https://www.google.com';  // Redirect to Google after 20 minutes of same-clicking
+    }
+  } else {
+    voteStreakTime = 0;  // Reset if the position changes
+  }
+  
+  lastVoteTime = now;
+  lastClickPosition = clickPosition;
+}
+
+// Flash background on vote click
 function flashBackground(element, className) {
   element.classList.add(className);
   setTimeout(() => element.classList.remove(className), 300);
@@ -71,79 +94,38 @@ function flashBackground(element, className) {
 
 function restartAnimation(element, animationName = 'moveText', duration = '0.3s') {
   element.style.animation = 'none';
-  element.offsetHeight;
+  element.offsetHeight;  // Trigger reflow
   element.style.animation = `${animationName} ${duration} ease-in-out`;
   element.addEventListener('animationend', () => {
     element.style.animation = 'none';
   }, { once: true });
 }
 
-function vote(animal, areaEl, textEl, flashClass) {
-  if (!canClick() || !userId) return;
+// Voting function
+function vote(animal, areaEl, textEl, flashClass, event) {
+  if (!canClick()) return;
+
+  // Check for suspicious clicks (same position, interval)
+  isSuspiciousClick(event);
 
   const voteRef = ref(db, `votes/${animal}`);
   runTransaction(voteRef, (current) => (current || 0) + 1)
     .then(() => {
-      console.log(`[Vote] ${animal} +1 by ${userId}`);
+      console.log(`[Vote] ${animal} +1`);
       flashBackground(areaEl, flashClass);
       restartAnimation(textEl);
     })
     .catch(err => console.error(`[Vote] Failed:`, err.message));
 }
 
-// --- Anti-Cheat Methods ---
+// Click listeners for voting
+dogArea.addEventListener('click', (event) => vote('dog', dogArea, dogText, 'flash', event));
+catArea.addEventListener('click', (event) => vote('cat', catArea, catText, 'flash', event));
 
-document.addEventListener('click', (e) => {
-  // Record click coordinates
-  clickHistory.push({ x: e.clientX, y: e.clientY, time: Date.now() });
-
-  // Clean old clicks
-  clickHistory = clickHistory.filter(c => Date.now() - c.time < 20 * 60 * 1000);
-
-  // Detect identical location clicks
-  if (clickHistory.length >= 1000) {
-    const first = clickHistory[0];
-    const same = clickHistory.every(c =>
-      Math.abs(c.x - first.x) < 20 && Math.abs(c.y - first.y) < 20
-    );
-    if (same) {
-      window.location.href = "https://google.com";
-    }
-  }
-});
-
+// Refresh page after 20 minutes
+let pageStartTime = Date.now();
 setInterval(() => {
-  const before = new Date();
-  debugger;
-  const after = new Date();
-  if (after - before > 50) window.location.href = "https://google.com";
-}, 1000);
-
-const originalVote = vote.toString();
-setInterval(() => {
-  if (vote.toString() !== originalVote) {
-    window.location.href = "https://google.com";
+  if (Date.now() - pageStartTime >= 1200000) {  // 20 minutes
+    window.location.reload();  // Refresh the page
   }
-}, 3000);
-
-// Detect inactivity (no mouse movement)
-document.addEventListener('mousemove', () => {
-  lastMouseMove = Date.now();
-});
-
-setInterval(() => {
-  if (Date.now() - lastMouseMove > 13 * 60 * 1000) {
-    window.location.href = "https://google.com";
-  }
-}, 60000);
-
-// Auto refresh after 20 minutes
-setTimeout(() => {
-  location.reload();
-}, 20 * 60 * 1000);
-
-// Start voting only after auth is ready
-function enableVoting() {
-  dogArea.addEventListener('click', () => vote('dog', dogArea, dogText, 'flash'));
-  catArea.addEventListener('click', () => vote('cat', catArea, catText, 'flash'));
-}
+}, 60000);  // Check every minute
