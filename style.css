@@ -62,7 +62,7 @@ html, body {
 }
 #username-btn {
   position: fixed;
-  top: 80px; /* lower so it avoids overlapping #main-title */
+  top: 90px; /* enough to avoid the title */
   right: 20px;
   z-index: 100;
   padding: 8px 16px;
@@ -77,20 +77,19 @@ html, body {
   transition: background-color 0.3s ease;
 }
 
+#username-btn:hover {
+  background-color: #f5f5f5;
+}
+
 /* Mobile-friendly adjustments */
 @media (max-width: 767px) {
   #username-btn {
     font-size: 0.9em;
     padding: 6px 12px;
-    top: 70px;
+    top: 110px;  /* lowered to stay below the title */
     right: 12px;
     border-width: 1.5px;
   }
-}
-
-
-#username-btn:hover {
-  background-color: #f0f0f0;
 }
 #dog-text, #cat-text {
   font-size: 5em;
