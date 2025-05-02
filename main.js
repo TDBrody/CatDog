@@ -119,3 +119,50 @@ signInAnonymously(auth)
 // Click handlers
 dogArea.addEventListener('click', () => vote('dog', dogArea, dogText, 'flash'));
 catArea.addEventListener('click', () => vote('cat', catArea, catText, 'flash'));
+let clickTimes = []; // Array to store click timestamps
+let intervalTolerance = 20; // Allowable variance in the interval (±20ms)
+let timeWindow = 60000; // 1 minute (60,000 milliseconds)
+let maxClicks = 100; // Max number of clicks to track in the time window
+
+function detectConsistentIntervals() {
+  const now = Date.now();
+
+  // Remove clicks older than the time window (1 minute)
+  clickTimes = clickTimes.filter(time => now - time < timeWindow);
+
+  // Add the current click timestamp
+  clickTimes.push(now);
+
+  // Check if the user has clicked more than 2 times in the last minute
+  if (clickTimes.length > 1) {
+    let isSuspectedAutoClicker = false;
+
+    // Loop through all the clicks and check if they follow a consistent interval
+    for (let i = 1; i < clickTimes.length; i++) {
+      const interval = clickTimes[i] - clickTimes[i - 1]; // Time between consecutive clicks
+
+      // Check if the interval is consistent (within the tolerance)
+      if (i > 1 && Math.abs(interval - (clickTimes[i - 1] - clickTimes[i - 2])) > intervalTolerance) {
+        isSuspectedAutoClicker = false;
+        break;
+      } else {
+        isSuspectedAutoClicker = true;
+      }
+    }
+
+    // If consistent clicking pattern is detected, redirect the user
+    if (isSuspectedAutoClicker && clickTimes.length >= 5) {
+      alert("Suspicious clicking detected. You will be redirected to Google.");
+      window.location.href = "https://www.google.com"; // Redirect to Google
+    }
+  }
+}
+
+// Example of using this in a click handler
+document.getElementById('dog-area').addEventListener('click', () => {
+  detectConsistentIntervals();
+});
+
+document.getElementById('cat-area').addEventListener('click', () => {
+  detectConsistentIntervals();
+});
