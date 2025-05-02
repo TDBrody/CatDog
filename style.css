@@ -60,7 +60,26 @@ html, body {
 #cat-area.flash {
   background-color: #ddeeff;
 }
+#username-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 99;
+  padding: 10px 20px;
+  font-size: 1em;
+  font-weight: bold;
+  background-color: white;
+  color: black;
+  border: 2px solid black;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  transition: background-color 0.3s ease;
+}
 
+#username-btn:hover {
+  background-color: #f0f0f0;
+}
 #dog-text, #cat-text {
   font-size: 5em;
   font-weight: bold;
