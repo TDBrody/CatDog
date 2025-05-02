@@ -59,37 +59,30 @@ html, body {
 
 #cat-area.flash {
   background-color: #ddeeff;
-}
-#username-btn {
+}ease;
+#milestone-banner {
   position: fixed;
-  top: 90px; /* enough to avoid the title */
-  right: 20px;
-  z-index: 100;
-  padding: 8px 16px;
-  font-size: 1em;
-  font-weight: bold;
-  background-color: white;
-  color: black;
-  border: 2px solid black;
-  border-radius: 8px;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  transition: background-color 0.3s ease;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 20px;
+  font-size: 1.5rem;
+  text-align: center;
+  z-index: 1000;
+  display: none; /* Hidden by default */
+}
+
+@media screen and (max-width: 768px) {
+  #milestone-banner {
+    font-size: 1.2rem; /* Adjust font size for mobile */
+    padding: 15px; /* Adjust padding for mobile */
+  }
 }
 
 #username-btn:hover {
   background-color: #f5f5f5;
-}
-
-/* Mobile-friendly adjustments */
-@media (max-width: 767px) {
-  #username-btn {
-    font-size: 0.9em;
-    padding: 6px 12px;
-    top: 110px;  /* lowered to stay below the title */
-    right: 12px;
-    border-width: 1.5px;
-  }
 }
 #dog-text, #cat-text {
   font-size: 5em;
