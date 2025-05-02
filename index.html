@@ -1,37 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cats or Dogs </title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cat vs Dog Voting</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="main-title">Cats or Dogs?</div>
 
-    <div id="container">
-        <!-- Dog Voting Area -->
-        <div id="dog-area" class="vote-area">
-            <div id="dog-text">Dog</div>
-            <div id="dog-votes">Dog Votes: 0</div>
-        </div>
-
-        <!-- Cat Voting Area -->
-        <div id="cat-area" class="vote-area">
-            <div id="cat-text">Cat</div>
-            <div id="cat-votes">Cat Votes: 0</div>
-        </div>
+  <div id="main-title">Cat vs Dog Voting</div>
+  
+  <div id="container">
+    <!-- Dog Area -->
+    <div id="dog-area">
+      <div id="dog-text">Dog</div>
+      <div id="dog-votes">Dog Votes: 0</div>
     </div>
 
-    <!-- Support Button -->
-    <a id="support-btn" href="https://buymeacoffee.com/brodyseyral" target="_blank">
-        <span class="text short-text">Click here to support this project!</span>
-        <span class="text long-text">Servers and domains aren't cheap, every donation helps!</span>
-    </a>
+    <!-- Cat Area -->
+    <div id="cat-area">
+      <div id="cat-text">Cat</div>
+      <div id="cat-votes">Cat Votes: 0</div>
+    </div>
+  </div>
 
-    <div id="circle-animation"></div>
+  <!-- Support Button -->
+  <a id="support-btn" href="https://buymeacoffee.com/brodyseyral" target="_blank">
+    <span class="text short-text">Click here to support this project!</span>
+    <span class="text long-text">Servers and domains aren't cheap, every donation helps!</span>
+  </a>
 
-    <!-- Add type="module" to enable import statements in the JS files -->
-    <script type="module" src="main.js"></script>
+  <script type="module" src="main.js"></script>
 </body>
 </html>
