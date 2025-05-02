@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+import { getDatabase, ref, onValue, runTransaction, set } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
 // Firebase config (public-only usage)
 const firebaseConfig = {
@@ -42,6 +42,7 @@ onValue(ref(db, 'milestone'), (snapshot) => {
     }, 4000); // auto-hide
   }
 });
+
 // Utility
 let lastClick = 0;
 
@@ -82,15 +83,15 @@ function vote(animal, element, textElement, className) {
   const voteRef = ref(db, `votes/${animal}`);
   runTransaction(voteRef, (current) => (current || 0) + 1)
     .then(() => {
-          // Check for milestone after successful vote
-    onValue(ref(db, `votes/${animal}`), (snapshot) => {
-      const count = snapshot.val();
-      if (count % 1000 === 0) {
-        const milestoneRef = ref(db, 'milestone');
-        const displayName = username || 'Anonymous';
-        set(milestoneRef, `${displayName} was the ${count}th vote for ${animal}`);
-      }
-    }, { onlyOnce: true });
+      // Check for milestone after successful vote
+      onValue(ref(db, `votes/${animal}`), (snapshot) => {
+        const count = snapshot.val();
+        if (count % 1000 === 0) {
+          const milestoneRef = ref(db, 'milestone');
+          const displayName = username || 'Anonymous';
+          set(milestoneRef, `${displayName} was the ${count}th vote for ${animal}`);
+        }
+      }); // Removed `{ onlyOnce: true }` here
       console.log(`[Vote] ${animal} +1`);
       flashBackground(element, className);
       restartAnimation(textElement, 'moveText');
@@ -98,6 +99,7 @@ function vote(animal, element, textElement, className) {
     })
     .catch(err => console.error(`[Vote] Failed:`, err.message));
 }
+
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
 // Initialize Firebase Authentication
@@ -123,6 +125,7 @@ document.getElementById('username-btn').addEventListener('click', () => {
     alert("Username too long.");
   }
 });
+
 // Click handlers
 dogArea.addEventListener('click', () => vote('dog', dogArea, dogText, 'flash'));
 catArea.addEventListener('click', () => vote('cat', catArea, catText, 'flash'));
