@@ -31,7 +31,7 @@ onValue(ref(db, 'votes'), (snapshot) => {
   catVotes.textContent = `Cat Votes: ${data.cat || 0}`;
 });
 
-// Click limiter (100ms)
+// Click limiter
 let lastClick = 0;
 function canClick() {
   const now = Date.now();
@@ -41,6 +41,28 @@ function canClick() {
   }
   return false;
 }
+
+// Anti-autoclicker: detect same-position clicking
+let clickHistory = [];
+let autoclickerDetected = false;
+document.addEventListener('click', (e) => {
+  const now = Date.now();
+  clickHistory.push({ x: e.clientX, y: e.clientY, time: now });
+  clickHistory = clickHistory.filter(entry => now - entry.time < 20 * 60 * 1000); // Keep 20 mins of clicks
+
+  if (clickHistory.length > 1000) {
+    const { x, y } = clickHistory[0];
+    const sameSpot = clickHistory.every(click => {
+      const dx = Math.abs(click.x - x);
+      const dy = Math.abs(click.y - y);
+      return dx <= 10 && dy <= 10;
+    });
+    if (sameSpot && !autoclickerDetected) {
+      autoclickerDetected = true;
+      window.location.href = "https://google.com";
+    }
+  }
+});
 
 // Animations
 function flashBackground(element, className) {
@@ -72,59 +94,41 @@ function vote(animal, areaEl, textEl, flashClass) {
 }
 
 // Listeners
-dogArea.addEventListener('click', () => vote('dog', dogArea, dogText, 'flash'));
-catArea.addEventListener('click', () => vote('cat', catArea, catText, 'flash'));
+dogArea.addEventListener('click', (e) => vote('dog', dogArea, dogText, 'flash'));
+catArea.addEventListener('click', (e) => vote('cat', catArea, catText, 'flash'));
 
-// --- Anti-autoclicker 1: Same interval detection ---
-let clickTimes = [];
+// --- Anti-Cheat Methods ---
 
-function checkAutoclicking() {
-  if (clickTimes.length < 10) return false;
-
-  const intervals = clickTimes.slice(1).map((t, i) => t - clickTimes[i]);
-  const avg = intervals.reduce((a, b) => a + b) / intervals.length;
-  const variance = intervals.reduce((a, b) => a + Math.abs(b - avg), 0) / intervals.length;
-
-  const timeSpan = clickTimes[clickTimes.length - 1] - clickTimes[0];
-  if (variance < 10 && timeSpan >= 20 * 60 * 1000) {
-    return true;
+// 1. Detect DevTools open
+setInterval(() => {
+  const before = new Date();
+  debugger;
+  const after = new Date();
+  if (after - before > 50) {
+    window.location.href = "https://google.com";
   }
+}, 1000);
 
-  return false;
-}
-
-// --- Anti-autoclicker 2: Same spot detection with tolerance ---
-let clickX = null;
-let clickY = null;
-let sameSpotStart = null;
-
-document.addEventListener('click', (e) => {
-  const now = Date.now();
-
-  // Track interval patterns
-  clickTimes.push(now);
-  if (clickTimes.length > 100) clickTimes.shift();
-
-  if (checkAutoclicking()) {
-    window.location.href = 'https://www.google.com';
-    return;
+// 2. Detect if vote function is altered
+const originalVoteString = vote.toString();
+setInterval(() => {
+  if (vote.toString() !== originalVoteString) {
+    window.location.href = "https://google.com";
   }
+}, 3000);
 
-  // Check same spot clicking
-  const tolerance = 5;
-  if (
-    clickX !== null &&
-    Math.abs(e.clientX - clickX) <= tolerance &&
-    Math.abs(e.clientY - clickY) <= tolerance
-  ) {
-    if (!sameSpotStart) {
-      sameSpotStart = now;
-    } else if (now - sameSpotStart >= 20 * 60 * 1000) {
-      window.location.href = 'https://www.google.com';
-    }
-  } else {
-    clickX = e.clientX;
-    clickY = e.clientY;
-    sameSpotStart = now;
-  }
+// 3. Refresh page after 20 minutes
+setTimeout(() => {
+  location.reload();
+}, 20 * 60 * 1000);
+
+// 4. Idle mouse movement detector
+let lastMouseMove = Date.now();
+document.addEventListener('mousemove', () => {
+  lastMouseMove = Date.now();
 });
+setInterval(() => {
+  if (Date.now() - lastMouseMove > 13 * 60 * 1000) {
+    window.location.href = "https://google.com";
+  }
+}, 60000);
