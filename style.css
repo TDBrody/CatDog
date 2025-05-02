@@ -92,7 +92,6 @@ html, body {
   100% { transform: scale(1); }
 }
 
-/* Support Button */
 #support-btn {
   display: none;
 }
@@ -153,4 +152,4 @@ html, body {
     padding-left: 94px;
     padding-right: 94px;
   }
-} 
+}
