@@ -54,7 +54,8 @@ signInAnonymously(auth)
 let lastClick = 0;
 function canClick() {
   const now = Date.now();
-  if (now - lastClick >= 100) {
+  // Allow clicks only if they are spaced 200ms apart (adjustable to your preference)
+  if (now - lastClick >= 200) {
     lastClick = now;
     return true;
   }
@@ -72,7 +73,7 @@ function isSuspiciousClick(event) {
   const clickPosition = { x: event.clientX, y: event.clientY };
   const distance = lastClickPosition ? Math.sqrt(Math.pow(clickPosition.x - lastClickPosition.x, 2) + Math.pow(clickPosition.y - lastClickPosition.y, 2)) : 0;
 
-  // If clicked in the same spot for over 20 minutes or with the same interval (100ms) for too long
+  // Only check for suspicious clicks if interval is too fast or click is in the same area
   if (timeDifference <= 100 && distance < 10) {
     voteStreakTime += 100;
     if (voteStreakTime >= 1200000) { // 20 minutes
@@ -81,7 +82,7 @@ function isSuspiciousClick(event) {
   } else {
     voteStreakTime = 0;  // Reset if the position changes
   }
-  
+
   lastVoteTime = now;
   lastClickPosition = clickPosition;
 }
@@ -124,8 +125,4 @@ catArea.addEventListener('click', (event) => vote('cat', catArea, catText, 'flas
 
 // Refresh page after 20 minutes
 let pageStartTime = Date.now();
-setInterval(() => {
-  if (Date.now() - pageStartTime >= 1200000) {  // 20 minutes
-    window.location.reload();  // Refresh the page
-  }
-}, 60000);  // Check every minute
+setInterval(()
