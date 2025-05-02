@@ -92,7 +92,18 @@ signInAnonymously(auth)
   .catch((error) => {
     console.error("Error signing in anonymously:", error);
   });
+let username = localStorage.getItem('username') || null;
 
+document.getElementById('username-btn').addEventListener('click', () => {
+  const input = prompt("Choose a username (max 20 chars):");
+  if (input && input.length <= 20) {
+    username = input.trim();
+    localStorage.setItem('username', username);
+    alert(`Username set to: ${username}`);
+  } else if (input) {
+    alert("Username too long.");
+  }
+});
 // Click handlers
 dogArea.addEventListener('click', () => vote('dog', dogArea, dogText, 'flash'));
 catArea.addEventListener('click', () => vote('cat', catArea, catText, 'flash'));
