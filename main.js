@@ -32,6 +32,8 @@ onValue(ref(db, 'votes'), (snapshot) => {
   dogVotes.textContent = `Dog Votes: ${data.dog || 0}`;
   catVotes.textContent = `Cat Votes: ${data.cat || 0}`;
 });
+
+// Listen for milestone updates (to show the announcement)
 onValue(ref(db, 'milestone'), (snapshot) => {
   const message = snapshot.val();
   if (message) {
@@ -83,7 +85,7 @@ function vote(animal, element, textElement, className) {
   const voteRef = ref(db, `votes/${animal}`);
   runTransaction(voteRef, (current) => (current || 0) + 1)
     .then(() => {
-      // Check for milestone after successful vote
+      // Check if the vote count reaches a milestone and update the milestone
       onValue(ref(db, `votes/${animal}`), (snapshot) => {
         const count = snapshot.val();
         if (count % 1000 === 0) {
@@ -91,7 +93,7 @@ function vote(animal, element, textElement, className) {
           const displayName = username || 'Anonymous';
           set(milestoneRef, `${displayName} was the ${count}th vote for ${animal}`);
         }
-      }); // Removed `{ onlyOnce: true }` here
+      });
       console.log(`[Vote] ${animal} +1`);
       flashBackground(element, className);
       restartAnimation(textElement, 'moveText');
@@ -100,6 +102,7 @@ function vote(animal, element, textElement, className) {
     .catch(err => console.error(`[Vote] Failed:`, err.message));
 }
 
+// Firebase Authentication for anonymous sign-in
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
 // Initialize Firebase Authentication
@@ -113,6 +116,7 @@ signInAnonymously(auth)
   .catch((error) => {
     console.error("Error signing in anonymously:", error);
   });
+
 let username = localStorage.getItem('username') || null;
 
 document.getElementById('username-btn').addEventListener('click', () => {
