@@ -120,9 +120,9 @@ signInAnonymously(auth)
 dogArea.addEventListener('click', () => vote('dog', dogArea, dogText, 'flash'));
 catArea.addEventListener('click', () => vote('cat', catArea, catText, 'flash'));
 let clickTimes = []; // Array to store click timestamps
-let intervalTolerance = 20; // Allowable variance in the interval (±20ms)
+let intervalTolerance = 10; // Allowable variance in the interval (±20ms)
 let timeWindow = 60000; // 1 minute (60,000 milliseconds)
-let maxClicks = 100; // Max number of clicks to track in the time window
+let maxClicks = 200; // Max number of clicks to track in the time window
 
 function detectConsistentIntervals() {
   const now = Date.now();
