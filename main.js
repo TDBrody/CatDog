@@ -79,6 +79,19 @@ function vote(animal, element, textElement, className) {
     })
     .catch(err => console.error(`[Vote] Failed:`, err.message));
 }
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+
+// Initialize Firebase Authentication
+const auth = getAuth(app);
+
+// Sign in anonymously (add this when the page loads)
+signInAnonymously(auth)
+  .then(() => {
+    console.log("User signed in anonymously.");
+  })
+  .catch((error) => {
+    console.error("Error signing in anonymously:", error);
+  });
 
 // Click handlers
 dogArea.addEventListener('click', () => vote('dog', dogArea, dogText, 'flash'));
