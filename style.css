@@ -158,7 +158,30 @@ html, body {
   .long-text {
     opacity: 0;
   }
+#milestone-banner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: black;
+  color: white;
+  padding: 20px 40px;
+  font-size: 2em;
+  font-weight: bold;
+  border-radius: 10px;
+  z-index: 200;
+  display: none;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  animation: fadeInOut 4s ease-in-out;
+}
 
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translate(-50%, -60%); }
+  10% { opacity: 1; transform: translate(-50%, -50%); }
+  90% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -40%); }
+}
   #support-btn:hover .short-text {
     opacity: 0;
   }
