@@ -73,4 +73,4 @@ function vote(animal, element, textElement, className) {
 
 // Click handlers
 dogArea.addEventListener('click', () => vote('dog', dogArea, dogText, 'flash'));
-catArea.addEventListener('click', () => vote('cat', catArea, catText, 'flash'));
+catArea.addEventListener('click', () => vote('cat', catArea, catText, 'flash')); 
