@@ -62,20 +62,32 @@ html, body {
 }
 #username-btn {
   position: fixed;
-  top: 20px;
+  top: 80px; /* lower so it avoids overlapping #main-title */
   right: 20px;
-  z-index: 99;
-  padding: 10px 20px;
+  z-index: 100;
+  padding: 8px 16px;
   font-size: 1em;
   font-weight: bold;
   background-color: white;
   color: black;
   border: 2px solid black;
-  border-radius: 10px;
+  border-radius: 8px;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   transition: background-color 0.3s ease;
 }
+
+/* Mobile-friendly adjustments */
+@media (max-width: 767px) {
+  #username-btn {
+    font-size: 0.9em;
+    padding: 6px 12px;
+    top: 70px;
+    right: 12px;
+    border-width: 1.5px;
+  }
+}
+
 
 #username-btn:hover {
   background-color: #f0f0f0;
