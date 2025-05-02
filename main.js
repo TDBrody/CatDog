@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
-// Firebase config (public-only usage)
+// Firebase config
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "catordogonline.firebaseapp.com",
@@ -24,14 +24,14 @@ const catText = document.getElementById('cat-text');
 const dogVotes = document.getElementById('dog-votes');
 const catVotes = document.getElementById('cat-votes');
 
-// Load live votes
+// Live vote sync
 onValue(ref(db, 'votes'), (snapshot) => {
   const data = snapshot.val() || {};
   dogVotes.textContent = `Dog Votes: ${data.dog || 0}`;
   catVotes.textContent = `Cat Votes: ${data.cat || 0}`;
 });
 
-// Utility
+// Click limiter
 let lastClick = 0;
 function canClick() {
   const now = Date.now();
@@ -42,35 +42,35 @@ function canClick() {
   return false;
 }
 
+// Animations
 function flashBackground(element, className) {
   element.classList.add(className);
-  setTimeout(() => {
-    element.classList.remove(className);
-  }, 300);
+  setTimeout(() => element.classList.remove(className), 300);
 }
 
 function restartAnimation(element, animationName = 'moveText', duration = '0.3s') {
   element.style.animation = 'none';
-  element.offsetHeight;
+  element.offsetHeight; // force reflow
   element.style.animation = `${animationName} ${duration} ease-in-out`;
   element.addEventListener('animationend', () => {
     element.style.animation = 'none';
   }, { once: true });
 }
 
-function vote(animal, element, textElement, className) {
+// Voting
+function vote(animal, areaEl, textEl, flashClass) {
   if (!canClick()) return;
 
   const voteRef = ref(db, `votes/${animal}`);
   runTransaction(voteRef, (current) => (current || 0) + 1)
     .then(() => {
       console.log(`[Vote] ${animal} +1`);
-      flashBackground(element, className);
-      restartAnimation(textElement, 'moveText');
+      flashBackground(areaEl, flashClass);
+      restartAnimation(textEl);
     })
     .catch(err => console.error(`[Vote] Failed:`, err.message));
 }
 
-// Click handlers
+// Listeners
 dogArea.addEventListener('click', () => vote('dog', dogArea, dogText, 'flash'));
-catArea.addEventListener('click', () => vote('cat', catArea, catText, 'flash')); 
+catArea.addEventListener('click', () => vote('cat', catArea, catText, 'flash'));
