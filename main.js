@@ -17,6 +17,7 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 // DOM Elements
+const milestoneBanner = document.getElementById('milestone-banner');
 const dogArea = document.getElementById('dog-area');
 const catArea = document.getElementById('cat-area');
 const dogText = document.getElementById('dog-text');
@@ -31,7 +32,16 @@ onValue(ref(db, 'votes'), (snapshot) => {
   dogVotes.textContent = `Dog Votes: ${data.dog || 0}`;
   catVotes.textContent = `Cat Votes: ${data.cat || 0}`;
 });
-
+onValue(ref(db, 'milestone'), (snapshot) => {
+  const message = snapshot.val();
+  if (message) {
+    milestoneBanner.textContent = message;
+    milestoneBanner.style.display = 'block';
+    setTimeout(() => {
+      milestoneBanner.style.display = 'none';
+    }, 4000); // auto-hide
+  }
+});
 // Utility
 let lastClick = 0;
 
@@ -72,6 +82,15 @@ function vote(animal, element, textElement, className) {
   const voteRef = ref(db, `votes/${animal}`);
   runTransaction(voteRef, (current) => (current || 0) + 1)
     .then(() => {
+          // Check for milestone after successful vote
+    onValue(ref(db, `votes/${animal}`), (snapshot) => {
+      const count = snapshot.val();
+      if (count % 1000 === 0) {
+        const milestoneRef = ref(db, 'milestone');
+        const displayName = username || 'Anonymous';
+        set(milestoneRef, `${displayName} was the ${count}th vote for ${animal}`);
+      }
+    }, { onlyOnce: true });
       console.log(`[Vote] ${animal} +1`);
       flashBackground(element, className);
       restartAnimation(textElement, 'moveText');
