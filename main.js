@@ -74,3 +74,23 @@ function vote(animal, areaEl, textEl, flashClass) {
 // Listeners
 dogArea.addEventListener('click', () => vote('dog', dogArea, dogText, 'flash'));
 catArea.addEventListener('click', () => vote('cat', catArea, catText, 'flash'));
+
+// Same-spot click redirect logic
+let clickX = null;
+let clickY = null;
+let sameSpotStart = null;
+
+document.addEventListener('click', (e) => {
+  const now = Date.now();
+  if (clickX === e.clientX && clickY === e.clientY) {
+    if (!sameSpotStart) {
+      sameSpotStart = now;
+    } else if (now - sameSpotStart >= 20 * 60 * 1000) {
+      window.location.href = 'https://www.google.com';
+    }
+  } else {
+    clickX = e.clientX;
+    clickY = e.clientY;
+    sameSpotStart = now;
+  }
+});
