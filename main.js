@@ -12,7 +12,7 @@ const firebaseConfig = {
   appId: "1:559934644373:web:655dc88061e2a4b87d7b9c"
 };
 
-// Init
+// Init Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
@@ -90,8 +90,7 @@ function vote(animal, element, textElement, className) {
         const count = snapshot.val();
         if (count % 1000 === 0) {
           const milestoneRef = ref(db, 'milestone');
-          const displayName = username || 'Anonymous';
-          set(milestoneRef, `${displayName} was the ${count}th vote for ${animal}`);
+          set(milestoneRef, `Milestone: ${count} votes for ${animal}`);
         }
       });
       console.log(`[Vote] ${animal} +1`);
@@ -116,19 +115,6 @@ signInAnonymously(auth)
   .catch((error) => {
     console.error("Error signing in anonymously:", error);
   });
-
-let username = localStorage.getItem('username') || null;
-
-document.getElementById('username-btn').addEventListener('click', () => {
-  const input = prompt("Choose a username (max 20 chars):");
-  if (input && input.length <= 20) {
-    username = input.trim();
-    localStorage.setItem('username', username);
-    alert(`Username set to: ${username}`);
-  } else if (input) {
-    alert("Username too long.");
-  }
-});
 
 // Click handlers
 dogArea.addEventListener('click', () => vote('dog', dogArea, dogText, 'flash'));
