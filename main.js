@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import { getDatabase, ref, runTransaction, onValue } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
-import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
 // Firebase config
 const firebaseConfig = {
@@ -13,40 +13,27 @@ const firebaseConfig = {
   appId: "1:559934644373:web:655dc88061e2a4b87d7b9c"
 };
 
-// Init
+// Initialize Firebase App
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth();
 
+// Sign in anonymously and handle authentication state
+signInAnonymously(auth)
+  .then(() => {
+    console.log("Signed in anonymously");
+  })
+  .catch((error) => {
+    console.error("Authentication failed:", error);
+  });
+
 // DOM Elements
 const dogArea = document.getElementById('dog-area');
 const catArea = document.getElementById('cat-area');
-const dogText = document.getElementById('dog-text');
-const catText = document.getElementById('cat-text');
 const dogVotes = document.getElementById('dog-votes');
 const catVotes = document.getElementById('cat-votes');
-const supportBtn = document.getElementById('support-btn');
 
-// Authenticate anonymously
-signInAnonymously(auth).catch((error) => {
-  console.error("Anonymous sign-in failed:", error.message);
-});
-
-// Sync votes only after auth
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    console.log("Signed in anonymously, syncing votes...");
-    onValue(ref(db, 'votes'), (snapshot) => {
-      const data = snapshot.val() || {};
-      dogVotes.textContent = `Dog Votes: ${data.dog || 0}`;
-      catVotes.textContent = `Cat Votes: ${data.cat || 0}`;
-    });
-  } else {
-    console.warn("Waiting for sign-in...");
-  }
-});
-
-// Click limiter
+// Voting permissions: 1 click every 100ms to prevent spam
 let lastClick = 0;
 function canClick() {
   const now = Date.now();
@@ -57,43 +44,25 @@ function canClick() {
   return false;
 }
 
-// Animations
-function flashBackground(element, className) {
-  element.classList.add(className);
-  setTimeout(() => element.classList.remove(className), 300);
-}
-
-function restartAnimation(element, animationName = 'moveText', duration = '0.3s') {
-  element.style.animation = 'none';
-  element.offsetHeight;
-  element.style.animation = `${animationName} ${duration} ease-in-out`;
-  element.addEventListener('animationend', () => {
-    element.style.animation = 'none';
-  }, { once: true });
-}
-
-function moveDonateBox() {
-  supportBtn.style.animation = 'moveDonateBox 1s ease-in-out';
-  supportBtn.addEventListener('animationend', () => {
-    supportBtn.style.animation = 'none';
-  }, { once: true });
-}
-
-// Voting
-function vote(animal, areaEl, textEl, flashClass) {
-  if (!canClick()) return;
+// Function to handle voting
+function vote(animal) {
+  if (!canClick()) return;  // Prevent rapid clicks
 
   const voteRef = ref(db, `votes/${animal}`);
   runTransaction(voteRef, (current) => (current || 0) + 1)
     .then(() => {
       console.log(`[Vote] ${animal} +1`);
-      flashBackground(areaEl, flashClass);
-      restartAnimation(textEl);
-      moveDonateBox();
     })
-    .catch(err => console.error(`[Vote] Failed:`, err.message));
+    .catch(err => console.error("[Vote Error]", err));
 }
 
-// Event listeners
-dogArea.addEventListener('click', () => vote('dog', dogArea, dogText, 'flash'));
-catArea.addEventListener('click', () => vote('cat', catArea, catText, 'flash'));
+// Display live votes
+onValue(ref(db, 'votes'), (snapshot) => {
+  const data = snapshot.val() || {};
+  dogVotes.textContent = `Dog Votes: ${data.dog || 0}`;
+  catVotes.textContent = `Cat Votes: ${data.cat || 0}`;
+});
+
+// Click listeners for Dog and Cat areas
+dogArea.addEventListener('click', () => vote('dog'));
+catArea.addEventListener('click', () => vote('cat'));
