@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
 // Firebase config
 const firebaseConfig = {
@@ -15,6 +16,23 @@ const firebaseConfig = {
 // Init
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const auth = getAuth();
+
+let userId = null;
+
+// Wait for anonymous auth
+signInAnonymously(auth)
+  .then(() => console.log('[Auth] Signed in anonymously'))
+  .catch(err => console.error('[Auth] Sign-in failed:', err.message));
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    userId = user.uid;
+    enableVoting(); // Begin logic after auth is ready
+  } else {
+    console.warn('[Auth] User signed out');
+  }
+});
 
 // DOM Elements
 const dogArea = document.getElementById('dog-area');
@@ -31,8 +49,12 @@ onValue(ref(db, 'votes'), (snapshot) => {
   catVotes.textContent = `Cat Votes: ${data.cat || 0}`;
 });
 
-// Click limiter
+// --- Anti-Cheat Variables ---
 let lastClick = 0;
+let clickHistory = [];
+let lastMouseMove = Date.now();
+
+// Utility
 function canClick() {
   const now = Date.now();
   if (now - lastClick >= 100) {
@@ -42,29 +64,6 @@ function canClick() {
   return false;
 }
 
-// Anti-autoclicker: detect same-position clicking
-let clickHistory = [];
-let autoclickerDetected = false;
-document.addEventListener('click', (e) => {
-  const now = Date.now();
-  clickHistory.push({ x: e.clientX, y: e.clientY, time: now });
-  clickHistory = clickHistory.filter(entry => now - entry.time < 20 * 60 * 1000); // Keep 20 mins of clicks
-
-  if (clickHistory.length > 1000) {
-    const { x, y } = clickHistory[0];
-    const sameSpot = clickHistory.every(click => {
-      const dx = Math.abs(click.x - x);
-      const dy = Math.abs(click.y - y);
-      return dx <= 10 && dy <= 10;
-    });
-    if (sameSpot && !autoclickerDetected) {
-      autoclickerDetected = true;
-      window.location.href = "https://google.com";
-    }
-  }
-});
-
-// Animations
 function flashBackground(element, className) {
   element.classList.add(className);
   setTimeout(() => element.classList.remove(className), 300);
@@ -72,63 +71,79 @@ function flashBackground(element, className) {
 
 function restartAnimation(element, animationName = 'moveText', duration = '0.3s') {
   element.style.animation = 'none';
-  element.offsetHeight; // force reflow
+  element.offsetHeight;
   element.style.animation = `${animationName} ${duration} ease-in-out`;
   element.addEventListener('animationend', () => {
     element.style.animation = 'none';
   }, { once: true });
 }
 
-// Voting
 function vote(animal, areaEl, textEl, flashClass) {
-  if (!canClick()) return;
+  if (!canClick() || !userId) return;
 
   const voteRef = ref(db, `votes/${animal}`);
   runTransaction(voteRef, (current) => (current || 0) + 1)
     .then(() => {
-      console.log(`[Vote] ${animal} +1`);
+      console.log(`[Vote] ${animal} +1 by ${userId}`);
       flashBackground(areaEl, flashClass);
       restartAnimation(textEl);
     })
     .catch(err => console.error(`[Vote] Failed:`, err.message));
 }
 
-// Listeners
-dogArea.addEventListener('click', (e) => vote('dog', dogArea, dogText, 'flash'));
-catArea.addEventListener('click', (e) => vote('cat', catArea, catText, 'flash'));
-
 // --- Anti-Cheat Methods ---
 
-// 1. Detect DevTools open
+document.addEventListener('click', (e) => {
+  // Record click coordinates
+  clickHistory.push({ x: e.clientX, y: e.clientY, time: Date.now() });
+
+  // Clean old clicks
+  clickHistory = clickHistory.filter(c => Date.now() - c.time < 20 * 60 * 1000);
+
+  // Detect identical location clicks
+  if (clickHistory.length >= 1000) {
+    const first = clickHistory[0];
+    const same = clickHistory.every(c =>
+      Math.abs(c.x - first.x) < 20 && Math.abs(c.y - first.y) < 20
+    );
+    if (same) {
+      window.location.href = "https://google.com";
+    }
+  }
+});
+
 setInterval(() => {
   const before = new Date();
   debugger;
   const after = new Date();
-  if (after - before > 50) {
-    window.location.href = "https://google.com";
-  }
+  if (after - before > 50) window.location.href = "https://google.com";
 }, 1000);
 
-// 2. Detect if vote function is altered
-const originalVoteString = vote.toString();
+const originalVote = vote.toString();
 setInterval(() => {
-  if (vote.toString() !== originalVoteString) {
+  if (vote.toString() !== originalVote) {
     window.location.href = "https://google.com";
   }
 }, 3000);
 
-// 3. Refresh page after 20 minutes
-setTimeout(() => {
-  location.reload();
-}, 20 * 60 * 1000);
-
-// 4. Idle mouse movement detector
-let lastMouseMove = Date.now();
+// Detect inactivity (no mouse movement)
 document.addEventListener('mousemove', () => {
   lastMouseMove = Date.now();
 });
+
 setInterval(() => {
   if (Date.now() - lastMouseMove > 13 * 60 * 1000) {
     window.location.href = "https://google.com";
   }
 }, 60000);
+
+// Auto refresh after 20 minutes
+setTimeout(() => {
+  location.reload();
+}, 20 * 60 * 1000);
+
+// Start voting only after auth is ready
+function enableVoting() {
+  dogArea.addEventListener('click', () => vote('dog', dogArea, dogText, 'flash'));
+  catArea.addEventListener('click', () => vote('cat', catArea, catText, 'flash'));
+}
